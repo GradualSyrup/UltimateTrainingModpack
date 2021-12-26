@@ -25,6 +25,7 @@ mod mash;
 mod reset;
 mod save_states;
 mod shield_tilt;
+mod character_items;
 
 #[skyline::hook(replace = WorkModule::get_param_float)]
 pub unsafe fn handle_get_param_float(

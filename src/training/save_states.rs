@@ -9,6 +9,13 @@ use smash::hash40;
 use smash::lib::lua_const::*;
 use smash::phx::{Hash40, Vector3f};
 
+use crate::training::character_items;
+//use crate::training::FighterInformation::is_operation_cpu;
+use crate::common::consts::*;
+use crate::common::*;
+use crate::training::character_specific;
+// one of these is needed for operation cpu, figure that out
+
 #[derive(PartialEq)]
 enum SaveState {
     Save,
@@ -223,9 +230,14 @@ pub unsafe fn save_states(module_accessor: &mut app::BattleObjectModuleAccessor)
             save_state.state = NoAction;
         }
 
-        // if we're done moving, reset percent
+        // if we're done moving, reset percent and give the player fighter their item
         if save_state.state == NoAction {
             set_damage(module_accessor, save_state.percent);
+            ItemModule::remove_all(module_accessor); // don't think these work
+            SoundModule::stop_all_sound(module_accessor); // don't think these work
+            if !is_operation_cpu(module_accessor) {
+                character_items::handle_state_item(module_accessor);
+            }
         }
 
         return;

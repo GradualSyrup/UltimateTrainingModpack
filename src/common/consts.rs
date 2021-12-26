@@ -642,6 +642,33 @@ impl SdiStrength {
     }
 }
 
+/// Item Selections
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, FromPrimitive, EnumIter)]
+pub enum CharacterItem {
+    None = 0,
+    Player1 = 1,
+    Player2 = 2,
+    Cpu1 = 3, // hey it's you
+    Cpu2 = 4,
+}
+
+impl CharacterItem {
+    pub fn as_str(self) -> Option<&'static str> {
+        Some(match self {
+            CharacterItem::None => "None",
+            CharacterItem::Player1 => "Player-1",
+            CharacterItem::Player2 => "Player-2",
+            CharacterItem::Cpu1 => "CPU-1",
+            CharacterItem::Cpu2 => "CPU-2",
+        })
+    }
+
+    pub fn to_url_param(&self) -> String {
+        (*self as i32).to_string()
+    }
+}
+
 // For input delay
 trait ToUrlParam {
     fn to_url_param(&self) -> String;
@@ -714,6 +741,7 @@ url_params! {
         pub save_state_mirroring: SaveStateMirroring,
         pub frame_advantage: OnOff,
         pub save_state_enable: OnOff,
+        pub character_item: CharacterItem,
     }
 }
 
@@ -761,6 +789,7 @@ impl TrainingModpackMenu {
             frame_advantage = OnOff::from_val(val),
             save_state_mirroring = num::FromPrimitive::from_u32(val),
             save_state_enable = OnOff::from_val(val),
+            character_item = num::FromPrimitive::from_u32(val),
         );
     }
 }

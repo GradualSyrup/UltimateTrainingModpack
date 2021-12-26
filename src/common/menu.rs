@@ -482,6 +482,13 @@ pub unsafe fn write_menu() {
         SaveStateMirroring,
         "Mirroring: Flips save states in the left-right direction across the stage center"
     );
+    add_single_option_submenu!(
+        overall_menu,
+        "Character Item",
+        character_item,
+        CharacterItem,
+        "Character Item: Item to hold when loading a save state"
+    );
 
     // Slider menus
     overall_menu.add_sub_menu(
