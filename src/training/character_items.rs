@@ -26,7 +26,7 @@ pub struct CharItem {
     variation: Option<LuaConst>,
 }
 
-pub const CHARITEM_ALL: [CharItem; 41] = [ // Make a Vector?
+pub const CHARITEM_ALL: [CharItem; 47] = [ // Make a Vector?
     CharItem {
         fighter_kind: FIGHTER_KIND_DIDDY,
         item_kind: ITEM_KIND_BANANA,
@@ -117,39 +117,13 @@ pub const CHARITEM_ALL: [CharItem; 41] = [ // Make a Vector?
         variation: None,
     },
     CharItem {
-        // Villager Apple
-        fighter_kind: FIGHTER_KIND_MURABITO,
-        item_kind: ITEM_KIND_MURABITOFRUIT,
-        variation: None,
-    },
-    CharItem {
-        fighter_kind: FIGHTER_KIND_PACMAN,
-        item_kind: ITEM_KIND_PACMANAPPLE,
-        variation: None,
-    },
-    CharItem {
-        fighter_kind: FIGHTER_KIND_PACMAN,
-        item_kind: ITEM_KIND_PACMANBELL,
-        variation: None,
-    },
-    CharItem {
-        fighter_kind: FIGHTER_KIND_PACMAN,
-        item_kind: ITEM_KIND_PACMANBOSS,
-        variation: None,
-    },
-    CharItem {
         fighter_kind: FIGHTER_KIND_PACMAN,
         item_kind: ITEM_KIND_PACMANCHERRY,
         variation: None,
     },
     CharItem {
         fighter_kind: FIGHTER_KIND_PACMAN,
-        item_kind: ITEM_KIND_PACMANKEY,
-        variation: None,
-    },
-    CharItem {
-        fighter_kind: FIGHTER_KIND_PACMAN,
-        item_kind: ITEM_KIND_PACMANMELON,
+        item_kind: ITEM_KIND_PACMANSTRAWBERRY,
         variation: None,
     },
     CharItem {
@@ -159,7 +133,27 @@ pub const CHARITEM_ALL: [CharItem; 41] = [ // Make a Vector?
     },
     CharItem {
         fighter_kind: FIGHTER_KIND_PACMAN,
-        item_kind: ITEM_KIND_PACMANSTRAWBERRY,
+        item_kind: ITEM_KIND_PACMANAPPLE,
+        variation: None,
+    },
+    CharItem {
+        fighter_kind: FIGHTER_KIND_PACMAN,
+        item_kind: ITEM_KIND_PACMANMELON,
+        variation: None,
+    },
+    CharItem {
+        fighter_kind: FIGHTER_KIND_PACMAN,
+        item_kind: ITEM_KIND_PACMANBOSS,
+        variation: None,
+    },
+    CharItem {
+        fighter_kind: FIGHTER_KIND_PACMAN,
+        item_kind: ITEM_KIND_PACMANBELL,
+        variation: None,
+    },
+    CharItem {
+        fighter_kind: FIGHTER_KIND_PACMAN,
+        item_kind: ITEM_KIND_PACMANKEY,
         variation: None,
     },
     CharItem {
@@ -207,21 +201,56 @@ pub const CHARITEM_ALL: [CharItem; 41] = [ // Make a Vector?
         fighter_kind: FIGHTER_KIND_ROBOT,
         item_kind: ITEM_KIND_ROBOTGYRO,
         variation: Some(ITEM_VARIATION_ROBOTGYRO_1P),
-    }, // Red and White Gyro, only one required.
+    },
+    CharItem {
+        fighter_kind: FIGHTER_KIND_ROBOT,
+        item_kind: ITEM_KIND_ROBOTGYRO,
+        variation: Some(ITEM_VARIATION_ROBOTGYRO_2P),
+    },
+    CharItem {
+        fighter_kind: FIGHTER_KIND_ROBOT,
+        item_kind: ITEM_KIND_ROBOTGYRO,
+        variation: Some(ITEM_VARIATION_ROBOTGYRO_3P),
+    },
+    CharItem {
+        fighter_kind: FIGHTER_KIND_ROBOT,
+        item_kind: ITEM_KIND_ROBOTGYRO,
+        variation: Some(ITEM_VARIATION_ROBOTGYRO_4P),
+    },
+    CharItem {
+        fighter_kind: FIGHTER_KIND_ROBOT,
+        item_kind: ITEM_KIND_ROBOTGYRO,
+        variation: Some(ITEM_VARIATION_ROBOTGYRO_5P),
+    },
+    CharItem {
+        fighter_kind: FIGHTER_KIND_ROBOT,
+        item_kind: ITEM_KIND_ROBOTGYRO,
+        variation: Some(ITEM_VARIATION_ROBOTGYRO_6P),
+    },
+    CharItem {
+        fighter_kind: FIGHTER_KIND_ROBOT,
+        item_kind: ITEM_KIND_ROBOTGYRO,
+        variation: Some(ITEM_VARIATION_ROBOTGYRO_7P),
+    },
+    CharItem {
+        fighter_kind: FIGHTER_KIND_ROBOT,
+        item_kind: ITEM_KIND_ROBOTGYRO,
+        variation: Some(ITEM_VARIATION_ROBOTGYRO_8P),
+    },
     CharItem {
         fighter_kind: FIGHTER_KIND_SIMON,
         item_kind: ITEM_KIND_SIMONHOLYWATER,
         variation: None,
     },
     CharItem {
-        // Cardboard Box from Taunt
         fighter_kind: FIGHTER_KIND_SNAKE,
-        item_kind: ITEM_KIND_SNAKECBOX,
+        item_kind: ITEM_KIND_SNAKEGRENADE,
         variation: None,
     },
     CharItem {
+        // Cardboard Box from Taunt
         fighter_kind: FIGHTER_KIND_SNAKE,
-        item_kind: ITEM_KIND_SNAKEGRENADE,
+        item_kind: ITEM_KIND_SNAKECBOX,
         variation: None,
     },
     CharItem {
@@ -288,6 +317,30 @@ pub unsafe fn handle_state_item(module_accessor: &mut app::BattleObjectModuleAcc
             fighter_kind = FIGHTER_KINDS[0];
             variation_index = 1;
         }
+        CharacterItem::Player3 => {
+            fighter_kind = FIGHTER_KINDS[0];
+            variation_index = 2;
+        }
+        CharacterItem::Player4 => {
+            fighter_kind = FIGHTER_KINDS[0];
+            variation_index = 3;
+        }
+        CharacterItem::Player5 => {
+            fighter_kind = FIGHTER_KINDS[0];
+            variation_index = 4;
+        }
+        CharacterItem::Player6 => {
+            fighter_kind = FIGHTER_KINDS[0];
+            variation_index = 5;
+        }
+        CharacterItem::Player7 => {
+            fighter_kind = FIGHTER_KINDS[0];
+            variation_index = 6;
+        }
+        CharacterItem::Player8 => {
+            fighter_kind = FIGHTER_KINDS[0];
+            variation_index = 7;
+        }
         CharacterItem::Cpu1 => {
             fighter_kind = FIGHTER_KINDS[1];
             variation_index = 0;
@@ -295,6 +348,30 @@ pub unsafe fn handle_state_item(module_accessor: &mut app::BattleObjectModuleAcc
         CharacterItem::Cpu2 => {
             fighter_kind = FIGHTER_KINDS[1];
             variation_index = 1;
+        }
+        CharacterItem::Cpu3 => {
+            fighter_kind = FIGHTER_KINDS[1];
+            variation_index = 2;
+        }
+        CharacterItem::Cpu4 => {
+            fighter_kind = FIGHTER_KINDS[1];
+            variation_index = 3;
+        }
+        CharacterItem::Cpu5 => {
+            fighter_kind = FIGHTER_KINDS[1];
+            variation_index = 4;
+        }
+        CharacterItem::Cpu6 => {
+            fighter_kind = FIGHTER_KINDS[1];
+            variation_index = 5;
+        }
+        CharacterItem::Cpu7 => {
+            fighter_kind = FIGHTER_KINDS[1];
+            variation_index = 6;
+        }
+        CharacterItem::Cpu8 => {
+            fighter_kind = FIGHTER_KINDS[1];
+            variation_index = 7;
         }
         _ => return, // may need to add ;?
     }

@@ -649,8 +649,20 @@ pub enum CharacterItem {
     None = 0,
     Player1 = 1,
     Player2 = 2,
-    Cpu1 = 3, // hey it's you
-    Cpu2 = 4,
+    Player3 = 3,
+    Player4 = 4,
+    Player5 = 5,
+    Player6 = 6,
+    Player7 = 7,
+    Player8 = 8,
+    Cpu1 = 9,
+    Cpu2 = 10,
+    Cpu3 = 11,
+    Cpu4 = 12,
+    Cpu5 = 13,
+    Cpu6 = 14,
+    Cpu7 = 15,
+    Cpu8 = 16,
 }
 
 impl CharacterItem {
@@ -659,8 +671,20 @@ impl CharacterItem {
             CharacterItem::None => "None",
             CharacterItem::Player1 => "Player-1",
             CharacterItem::Player2 => "Player-2",
+            CharacterItem::Player3 => "Player-3",
+            CharacterItem::Player4 => "Player-4",
+            CharacterItem::Player5 => "Player-5",
+            CharacterItem::Player6 => "Player-6",
+            CharacterItem::Player7 => "Player-7",
+            CharacterItem::Player8 => "Player-8",
             CharacterItem::Cpu1 => "CPU-1",
             CharacterItem::Cpu2 => "CPU-2",
+            CharacterItem::Cpu3 => "CPU-3",
+            CharacterItem::Cpu4 => "CPU-4",
+            CharacterItem::Cpu5 => "CPU-5",
+            CharacterItem::Cpu6 => "CPU-6",
+            CharacterItem::Cpu7 => "CPU-7",
+            CharacterItem::Cpu8 => "CPU-8",
         })
     }
 
