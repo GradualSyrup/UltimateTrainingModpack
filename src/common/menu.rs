@@ -11,7 +11,7 @@ use std::path::Path;
 use strum::IntoEnumIterator;
 
 static mut FRAME_COUNTER_INDEX: usize = 0;
-const MENU_LOCKOUT_FRAMES: u32 = 5;
+const MENU_LOCKOUT_FRAMES: u32 = 15;
 
 pub fn init() {
     unsafe {
@@ -488,6 +488,27 @@ pub unsafe fn write_menu() {
         character_item,
         CharacterItem,
         "Character Item: Item to hold when loading a save state"
+    );
+    add_bitflag_submenu!(
+        overall_menu,
+        "Throw Options",
+        throw_state,
+        ThrowOption,
+        "Throw Options: Throw to be performed when a grab is landed"
+    );
+    add_bitflag_submenu!(
+        overall_menu,
+        "Throw Delay",
+        throw_delay,
+        MedDelay,
+        "Throw Delay: How many frames to delay the throw option"
+    );
+    add_bitflag_submenu!(
+        overall_menu,
+        "Pummel Delay",
+        pummel_delay,
+        MedDelay,
+        "Pummel Delay: How many frames after a grab to wait before starting to pummel"
     );
 
     // Slider menus

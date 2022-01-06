@@ -40,6 +40,9 @@ pub static BASE_MENU: consts::TrainingModpackMenu = consts::TrainingModpackMenu 
     frame_advantage: OnOff::Off,
     save_state_enable: OnOff::On,
     character_item: CharacterItem::None,
+    throw_state: ThrowOption::NONE,
+    throw_delay: MedDelay::empty(),
+    pummel_delay: MedDelay::empty(),
 };
 
 pub static mut DEFAULT_MENU: TrainingModpackMenu = BASE_MENU;
@@ -86,6 +89,11 @@ pub fn is_operation_cpu(module_accessor: &mut app::BattleObjectModuleAccessor) -
 
         let entry_id_int =
             WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID) as i32;
+
+        if entry_id_int == 0 {
+            return false;
+        }
+
         let entry_id = app::FighterEntryID(entry_id_int);
         let mgr = *(FIGHTER_MANAGER_ADDR as *mut *mut app::FighterManager);
         let fighter_information =
