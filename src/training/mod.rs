@@ -1,4 +1,5 @@
 use crate::common::{is_training_mode, menu, FIGHTER_MANAGER_ADDR, STAGE_MANAGER_ADDR};
+use crate::common::consts::FighterId;
 use crate::hitbox_visualizer;
 use skyline::hooks::{getRegionAddress, InlineCtx, Region};
 use skyline::nn::hid::*;
@@ -451,6 +452,16 @@ pub unsafe fn handle_effect(
     )
 }
 
+#[skyline::hook(replace = ControlModule::is_enable_flick_jump)] // hooked to allow for toggling of tap jump on CPU dummy
+pub unsafe fn handle_flick_jump(module_accessor: &mut app::BattleObjectModuleAccessor) -> bool {
+    let is_cpu = WorkModule::get_int(module_accessor, *FIGHTER_INSTANCE_WORK_ID_INT_ENTRY_ID)
+        == FighterId::CPU as i32;
+    if is_cpu {
+        return false;
+    }
+    original!()(module_accessor)
+}
+
 #[allow(improper_ctypes)]
 extern "C" {
     fn add_nn_hid_hook(callback: fn(*mut NpadGcState, *const u32));
@@ -523,6 +534,8 @@ pub fn training_mods() {
         handle_se,
         // Death GFX
         handle_effect,
+        // CPU Controls
+        handle_flick_jump,
     );
 
     combo::init();
