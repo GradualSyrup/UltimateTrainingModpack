@@ -6,6 +6,7 @@ use smash::app::{ArticleOperationTarget, BattleObjectModuleAccessor};
 use smash::cpp::l2c_value::LuaConst;
 use smash::lib::lua_const::*;
 use smash::app::ItemKind;
+use smash::app::Article; // Imports need cleaning up
 
 pub struct CharItem {
     pub fighter_kind: LuaConst,
@@ -324,6 +325,7 @@ pub const ALL_CHAR_ITEMS: [CharItem; 45] = [
 ];
 
 pub static mut TURNIP_CHOSEN : Option<u32> = None;
+pub static mut TARGET_PLAYER : Option<*mut BattleObjectModuleAccessor> = None;
 
 unsafe fn apply_single_item(player_fighter_kind: i32,
                             cpu_fighter_kind: i32,
@@ -387,11 +389,21 @@ unsafe fn apply_single_item(player_fighter_kind: i32,
                                  ArticleOperationTarget(*ARTICLE_OPE_TARGET_ALL),
                                  false);
         } else {
-            ArticleModule::generate_article(player_module_accessor,
+            if item.fighter_kind == player_fighter_kind { // generating player article, no override needed
+                ArticleModule::generate_article(player_module_accessor,
                                             article_kind,
                                             false,
                                             0
-            );
+                );
+            } else {
+                TARGET_PLAYER = Some(player_module_accessor); // set so we generate CPU article on the player
+                ArticleModule::generate_article(cpu_module_accessor, // we want CPU's article
+                                                article_kind,
+                                                false,
+                                                0
+                );
+                TARGET_PLAYER = None;
+            }
         }
         TURNIP_CHOSEN = None;
     });
@@ -460,6 +472,37 @@ daikon_replace!(DAISY, daisy, 3);
 daikon_replace!(DAISY, daisy, 2);
 daikon_replace!(DAISY, daisy, 1);
 
+// GenerateArticleForTarget for Peach/Diddy(/Link?) item creation
+static GAFT_OFFSET: usize = 0x03d40a0;
+#[skyline::hook(offset = GAFT_OFFSET)]
+pub unsafe fn handle_generate_article_for_target(
+    article_module_accessor: *mut app::BattleObjectModuleAccessor,
+    int_1: i32,
+    module_accessor: *mut app::BattleObjectModuleAccessor, // this is always 0x0 normally
+    bool_1: bool,
+    int_2: i32,
+) -> u64 { // unknown return value, gets cast to an (Article *)
+    println!("Custom Article Generation! Generating Article.");
+    let target_module_accessor = TARGET_PLAYER.unwrap_or(module_accessor);
+    let ori = original!()(article_module_accessor, int_1, target_module_accessor, bool_1, int_2);
+    println!("Article Generated!");
+    return ori;
+}
+
+// RegisterArticle for Peach/Diddy(/Link?) item creation
+static REG_ART_OFFSET: usize = 0x03d5e20;
+#[skyline::hook(offset = REG_ART_OFFSET)]
+pub unsafe fn handle_register_article(
+    article_module_accessor: *mut app::BattleObjectModuleAccessor,
+    article: *mut app::Article, // should this lua_bind? assume not but maybe?
+) -> u64 { // unknown return value (if it has one)
+    println!("Registering Article!");
+    let ori = original!()(article_module_accessor, article);
+    println!("Article Registered! (or invalid)");
+    // check here if article invalid?
+    return ori;
+}
+
 pub fn init() {
     skyline::install_hooks!(
         handle_peachdaikon_8_prob,
@@ -478,5 +521,8 @@ pub fn init() {
         handle_daisydaikon_3_prob,
         handle_daisydaikon_2_prob,
         handle_daisydaikon_1_prob,
+        // Items
+        handle_generate_article_for_target,
+        handle_register_article,
     );
 }
