@@ -2,11 +2,10 @@ use smash::app;
 use crate::common::consts::*;
 use crate::common::*;
 use smash::app::lua_bind::*;
-use smash::app::{ArticleOperationTarget, BattleObjectModuleAccessor, ItemPickupSearchMode, QuickItemTreatType, ItemSize, Item};
+use smash::app::{ArticleOperationTarget, BattleObjectModuleAccessor, Item};
 use smash::cpp::l2c_value::LuaConst;
 use smash::lib::lua_const::*;
 use smash::app::ItemKind;
-use smash::app::Article; // Imports need cleaning up
 
 pub struct CharItem {
     pub fighter_kind: LuaConst,
@@ -328,35 +327,41 @@ pub static mut TURNIP_CHOSEN : Option<u32> = None;
 pub static mut TARGET_PLAYER : Option<*mut BattleObjectModuleAccessor> = None;
 
 unsafe fn apply_single_item(player_fighter_kind: i32,
-                            cpu_fighter_kind: i32,
+                            _cpu_fighter_kind: i32,
                             item: &CharItem) {
+    let player_module_accessor = get_module_accessor(FighterId::Player);
+    let cpu_module_accessor = get_module_accessor(FighterId::CPU);
+    // Now we make sure the module_accessor we use to generate the item/article is the correct character
+    let generator_module_accessor = if item.fighter_kind == player_fighter_kind { player_module_accessor } else { cpu_module_accessor };
     let variation = item.variation.as_ref()
         .map(|v| **v)
         .unwrap_or(0);
     item.item_kind.as_ref().map(|item_kind| {
-        let player_module_accessor = get_module_accessor(FighterId::Player);
-        let cpu_module_accessor = get_module_accessor(FighterId::CPU);
-
         let item_kind = **item_kind;
         // For Link, use special article generation to link the bomb for detonation
-        if player_fighter_kind == *FIGHTER_KIND_LINK && item_kind == *ITEM_KIND_LINKBOMB {
+        if item_kind == *ITEM_KIND_LINKBOMB {
             ArticleModule::generate_article_have_item(
-                player_module_accessor,
+                generator_module_accessor,
                 *FIGHTER_LINK_GENERATE_ARTICLE_LINKBOMB,
                 *FIGHTER_HAVE_ITEM_WORK_MAIN,
                 smash::phx::Hash40::new("invalid")
             );
+            if player_fighter_kind != *FIGHTER_KIND_LINK {
+                ItemModule::drop_item(cpu_module_accessor, 0.0, 0.0, 0);
+                //ItemModule::eject_have_item(cpu_module_accessor, 0, false, false);
+                let item_mgr = *(ITEM_MANAGER_ADDR as *mut *mut app::ItemManager);
+                let item_ptr = ItemManager::get_active_item(item_mgr, 0);
+                ItemModule::have_item_instance(player_module_accessor,
+                    item_ptr as *mut smash::app::Item, 0, false, false, false, false);
+                
+            }
         } else {
             ItemModule::have_item(player_module_accessor, ItemKind(item_kind),
-                                      variation, 0, false, false);
+            variation, 0, false, false);
         }
     });
 
-
     item.article_kind.as_ref().map(|article_kind| {
-        let player_module_accessor = get_module_accessor(FighterId::Player);
-        let cpu_module_accessor = get_module_accessor(FighterId::CPU);
-
         TURNIP_CHOSEN = if [*ITEM_VARIATION_PEACHDAIKON_8, *ITEM_VARIATION_DAISYDAIKON_8]
             .contains(&variation) {
             Some(8)
@@ -375,57 +380,32 @@ unsafe fn apply_single_item(player_fighter_kind: i32,
 
         let article_kind = **article_kind;
         if article_kind == FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA {
-            if player_fighter_kind == *FIGHTER_KIND_DIDDY { // use player to generate banana if they are diddy
-                ArticleModule::generate_article_have_item(
-                player_module_accessor,
+            ArticleModule::generate_article_have_item(
+            generator_module_accessor,
+            *FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA,
+            *FIGHTER_HAVE_ITEM_WORK_MAIN,
+            smash::phx::Hash40::new("invalid")
+            );
+            WorkModule::on_flag(generator_module_accessor,
+                *FIGHTER_DIDDY_STATUS_SPECIAL_LW_FLAG_ITEM_THROW);
+            ArticleModule::shoot(generator_module_accessor,
                 *FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA,
-                *FIGHTER_HAVE_ITEM_WORK_MAIN,
-                smash::phx::Hash40::new("invalid")
-                );
-                WorkModule::on_flag(player_module_accessor,
-                    *FIGHTER_DIDDY_STATUS_SPECIAL_LW_FLAG_ITEM_THROW);
-                ArticleModule::shoot(player_module_accessor,
-                    *FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA,
-                    ArticleOperationTarget(*ARTICLE_OPE_TARGET_ALL),
-                    false
-                );
-            } else { // otherwise use cpu to generate banana
-                ArticleModule::generate_article_have_item(
-                cpu_module_accessor,
-                *FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA,
-                *FIGHTER_HAVE_ITEM_WORK_MAIN,
-                smash::phx::Hash40::new("invalid")
-                );
-                WorkModule::on_flag(cpu_module_accessor,
-                    *FIGHTER_DIDDY_STATUS_SPECIAL_LW_FLAG_ITEM_THROW);
-                ArticleModule::shoot(cpu_module_accessor,
-                    *FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA,
-                    ArticleOperationTarget(*ARTICLE_OPE_TARGET_ALL),
-                    false
-                );
-            }
+                ArticleOperationTarget(*ARTICLE_OPE_TARGET_ALL),
+                false
+            );
             // Grab item from the middle of the stage where it gets shot
             let item_mgr = *(ITEM_MANAGER_ADDR as *mut *mut app::ItemManager);
             let item = ItemManager::get_active_item(item_mgr, 0);
             ItemModule::have_item_instance(player_module_accessor,
                 item as *mut Item, 0, false, false, false, false);
-
         } else {
-            if item.fighter_kind == player_fighter_kind { // generating player article, no override needed
-                ArticleModule::generate_article(player_module_accessor,
+            TARGET_PLAYER = Some(player_module_accessor); // set so we generate CPU article on the player (in dittos, items always belong to player, even if cpu item is chosen)
+            ArticleModule::generate_article(generator_module_accessor, // we want CPU's article
                                             article_kind,
                                             false,
                                             0
-                );
-            } else {
-                TARGET_PLAYER = Some(player_module_accessor); // set so we generate CPU article on the player
-                ArticleModule::generate_article(cpu_module_accessor, // we want CPU's article
-                                                article_kind,
-                                                false,
-                                                0
-                );
-                TARGET_PLAYER = None;
-            }
+            );
+            TARGET_PLAYER = None;
         }
         TURNIP_CHOSEN = None;
     });
