@@ -2,7 +2,7 @@ use smash::app;
 use crate::common::consts::*;
 use crate::common::*;
 use smash::app::lua_bind::*;
-use smash::app::{ArticleOperationTarget, BattleObjectModuleAccessor};
+use smash::app::{ArticleOperationTarget, BattleObjectModuleAccessor, ItemPickupSearchMode, QuickItemTreatType, ItemSize, Item};
 use smash::cpp::l2c_value::LuaConst;
 use smash::lib::lua_const::*;
 use smash::app::ItemKind;
@@ -374,20 +374,42 @@ unsafe fn apply_single_item(player_fighter_kind: i32,
         };
 
         let article_kind = **article_kind;
-        if player_fighter_kind == *FIGHTER_KIND_DIDDY &&
-            article_kind == FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA {
-            ArticleModule::generate_article(
+        if article_kind == FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA {
+            if player_fighter_kind == *FIGHTER_KIND_DIDDY { // use player to generate banana if they are diddy
+                ArticleModule::generate_article_have_item(
                 player_module_accessor,
                 *FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA,
-                false,
-                0
-            );
-            WorkModule::on_flag(player_module_accessor,
-                                *FIGHTER_DIDDY_STATUS_SPECIAL_LW_FLAG_ITEM_THROW);
-            ArticleModule::shoot(player_module_accessor,
-                                 *FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA,
-                                 ArticleOperationTarget(*ARTICLE_OPE_TARGET_ALL),
-                                 false);
+                *FIGHTER_HAVE_ITEM_WORK_MAIN,
+                smash::phx::Hash40::new("invalid")
+                );
+                WorkModule::on_flag(player_module_accessor,
+                    *FIGHTER_DIDDY_STATUS_SPECIAL_LW_FLAG_ITEM_THROW);
+                ArticleModule::shoot(player_module_accessor,
+                    *FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA,
+                    ArticleOperationTarget(*ARTICLE_OPE_TARGET_ALL),
+                    false
+                );
+            } else { // otherwise use cpu to generate banana
+                ArticleModule::generate_article_have_item(
+                cpu_module_accessor,
+                *FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA,
+                *FIGHTER_HAVE_ITEM_WORK_MAIN,
+                smash::phx::Hash40::new("invalid")
+                );
+                WorkModule::on_flag(cpu_module_accessor,
+                    *FIGHTER_DIDDY_STATUS_SPECIAL_LW_FLAG_ITEM_THROW);
+                ArticleModule::shoot(cpu_module_accessor,
+                    *FIGHTER_DIDDY_GENERATE_ARTICLE_ITEM_BANANA,
+                    ArticleOperationTarget(*ARTICLE_OPE_TARGET_ALL),
+                    false
+                );
+            }
+            // Grab item from the middle of the stage where it gets shot
+            let item_mgr = *(ITEM_MANAGER_ADDR as *mut *mut app::ItemManager);
+            let item = ItemManager::get_active_item(item_mgr, 0);
+            ItemModule::have_item_instance(player_module_accessor,
+                item as *mut Item, 0, false, false, false, false);
+
         } else {
             if item.fighter_kind == player_fighter_kind { // generating player article, no override needed
                 ArticleModule::generate_article(player_module_accessor,
