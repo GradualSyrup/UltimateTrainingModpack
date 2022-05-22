@@ -232,7 +232,7 @@ pub unsafe fn save_states(module_accessor: &mut app::BattleObjectModuleAccessor)
                 z: 0.0,
             };
             PostureModule::set_pos(module_accessor, &pos);
-
+            //ItemModule::drop_item(module_accessor, 0.0, 0.0, 0); // have players drop items they're holding before getting rid of items
             let item_mgr = *(ITEM_MANAGER_ADDR as *mut *mut app::ItemManager);
             (0..ItemManager::get_num_of_active_item_all(item_mgr))
                 .for_each(|item_idx| {

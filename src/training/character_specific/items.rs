@@ -2,10 +2,9 @@ use smash::app;
 use crate::common::consts::*;
 use crate::common::*;
 use smash::app::lua_bind::*;
-use smash::app::{ArticleOperationTarget, BattleObjectModuleAccessor, Item};
+use smash::app::{ArticleOperationTarget, BattleObjectModuleAccessor, Item, ItemKind, FighterModuleAccessor};
 use smash::cpp::l2c_value::LuaConst;
 use smash::lib::lua_const::*;
-use smash::app::ItemKind;
 
 pub struct CharItem {
     pub fighter_kind: LuaConst,
@@ -116,8 +115,8 @@ pub const ALL_CHAR_ITEMS: [CharItem; 45] = [
     },
     CharItem {
         fighter_kind: FIGHTER_KIND_ROCKMAN,
-        item_kind: Some(ITEM_KIND_METALBLADE),
-        article_kind: None,
+        item_kind: None, // Some(ITEM_KIND_METALBLADE),
+        article_kind: Some(FIGHTER_ROCKMAN_GENERATE_ARTICLE_METALBLADE),
         variation: None,
     },
     CharItem {
@@ -332,7 +331,13 @@ unsafe fn apply_single_item(player_fighter_kind: i32,
     let player_module_accessor = get_module_accessor(FighterId::Player);
     let cpu_module_accessor = get_module_accessor(FighterId::CPU);
     // Now we make sure the module_accessor we use to generate the item/article is the correct character
-    let generator_module_accessor = if item.fighter_kind == player_fighter_kind { player_module_accessor } else { cpu_module_accessor };
+    let generator_module_accessor = if *(item.fighter_kind) == player_fighter_kind { player_module_accessor } else { cpu_module_accessor };
+    if *(item.fighter_kind) == player_fighter_kind {
+        println!("generator is player!");
+    } else {
+        println!("generator is cpu!");
+        println!("item.fighter_kind = {}, player_fighter_kind = {}",*(item.fighter_kind),player_fighter_kind);
+    }
     let variation = item.variation.as_ref()
         .map(|v| **v)
         .unwrap_or(0);
@@ -346,7 +351,7 @@ unsafe fn apply_single_item(player_fighter_kind: i32,
                 *FIGHTER_HAVE_ITEM_WORK_MAIN,
                 smash::phx::Hash40::new("invalid")
             );
-            if player_fighter_kind != *FIGHTER_KIND_LINK {
+            if player_fighter_kind != *FIGHTER_KIND_LINK { // have the cpu drop the item if they generated it, and then have player pick it up
                 ItemModule::drop_item(cpu_module_accessor, 0.0, 0.0, 0);
                 //ItemModule::eject_have_item(cpu_module_accessor, 0, false, false);
                 let item_mgr = *(ITEM_MANAGER_ADDR as *mut *mut app::ItemManager);
@@ -356,8 +361,37 @@ unsafe fn apply_single_item(player_fighter_kind: i32,
                 
             }
         } else {
-            ItemModule::have_item(player_module_accessor, ItemKind(item_kind),
-            variation, 0, false, false);
+            //start WIP book
+            if item_kind == *ITEM_KIND_BOOK {
+                /*ArticleModule::generate_article_have_item(
+                    player_module_accessor,
+                    0, // this should be the book
+                    *FIGHTER_HAVE_ITEM_WORK_MAIN,
+                    smash::phx::Hash40::new("invalid")
+                );*/
+                //ItemModule::born_item(player_module_accessor, 0);
+                /*
+                let item_mgr = *(ITEM_MANAGER_ADDR as *mut *mut app::ItemManager);
+                let item_ptr = ItemManager::get_active_item(item_mgr, 0);
+                ItemModule::have_item_instance(player_module_accessor,
+                item_ptr as *mut smash::app::Item, 0, false, false, false, false);
+                */
+                // create FighterModuleAccessor
+                //let mut fighter_accessor = FighterModuleAccessor {battle_object_module_accessor: *generator_module_accessor};
+                FighterSpecializer_Reflet::set_flag_to_table(generator_module_accessor as *mut FighterModuleAccessor, *FIGHTER_REFLET_MAGIC_KIND_GIGA_FIRE, true, *FIGHTER_REFLET_INSTANCE_WORK_ID_INT_THROWAWAY_TABLE);
+                //FighterSpecializer_Reflet::set_flag_to_table(generator_module_accessor as *mut FighterModuleAccessor, *FIGHTER_REFLET_MAGIC_KIND_THUNDER, false, *FIGHTER_REFLET_INSTANCE_WORK_ID_INT_THROWAWAY_TABLE);
+                    
+            } else {
+                ItemModule::have_item(player_module_accessor, ItemKind(item_kind),
+                variation, 0, false, false);
+            }
+
+            //end
+            
+            
+            
+            //ItemModule::have_item(player_module_accessor, ItemKind(item_kind),
+            //variation, 0, false, false);
         }
     });
 
@@ -423,8 +457,6 @@ pub unsafe fn apply_item(character_item: CharacterItem) {
         } else {
             (cpu_fighter_kind, (character_item_num - CharacterItem::CpuVariation1.as_idx()) as usize)
         };
-    println!("Trying with item_fighter_kind: {}, variation_idx: {}",
-        item_fighter_kind, variation_idx);
     ALL_CHAR_ITEMS.iter()
         .filter(|item| item_fighter_kind == item.fighter_kind)
         .nth(variation_idx)
@@ -484,10 +516,10 @@ pub unsafe fn handle_generate_article_for_target(
     bool_1: bool,
     int_2: i32,
 ) -> u64 { // unknown return value, gets cast to an (Article *)
-    println!("Custom Article Generation! Generating Article.");
+    //println!("Custom Article Generation! Generating Article.");
     let target_module_accessor = TARGET_PLAYER.unwrap_or(module_accessor);
     let ori = original!()(article_module_accessor, int_1, target_module_accessor, bool_1, int_2);
-    println!("Article Generated!");
+    //println!("Article Generated!");
     return ori;
 }
 
@@ -498,10 +530,39 @@ pub unsafe fn handle_register_article(
     article_module_accessor: *mut app::BattleObjectModuleAccessor,
     article: *mut app::Article, // should this lua_bind? assume not but maybe?
 ) -> u64 { // unknown return value (if it has one)
-    println!("Registering Article!");
+    //println!("Registering Article!");
     let ori = original!()(article_module_accessor, article);
-    println!("Article Registered! (or invalid)");
+    //println!("Article Registered! (or invalid)");
     // check here if article invalid?
+    return ori;
+}
+
+
+// Robin Vtable Book Func
+pub mod FighterSpecializer_Reflet {
+    extern "C" {
+        #[link_name = "\u{1}_ZN3app25FighterSpecializer_Reflet17set_flag_to_tableERNS_21FighterModuleAccessorEibi"]
+        pub fn set_flag_to_table(
+            module_accessor: *mut smash::app::FighterModuleAccessor,
+            magic_kind: i32,
+            bool_1: bool,
+            table: i32,
+        ) -> u64;
+    }
+}
+
+#[skyline::hook(replace = FighterSpecializer_Reflet::set_flag_to_table)] // returns status of summon dispatch if triggered, -1 as u64 otherwise
+pub unsafe fn set_flag_to_table(
+    module_accessor: *mut FighterModuleAccessor,
+    magic_kind: i32,
+    bool_1: bool,
+    table: i32,
+) -> u64 {
+    if (table == *FIGHTER_REFLET_INSTANCE_WORK_ID_INT_THROWAWAY_TABLE) {
+        println!("Throwaway Table! Magic Kind: {}, Bool: {}",magic_kind, bool_1);
+    }
+    //skyline::logging::print_stack_trace();
+    let ori = original!()(module_accessor, magic_kind, bool_1, table); 
     return ori;
 }
 
@@ -526,5 +587,6 @@ pub fn init() {
         // Items
         handle_generate_article_for_target,
         handle_register_article,
+        set_flag_to_table,
     );
 }
