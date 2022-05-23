@@ -330,12 +330,12 @@ unsafe fn apply_single_item(player_fighter_kind: i32, item: &CharItem) {
     let player_module_accessor = get_module_accessor(FighterId::Player);
     let cpu_module_accessor = get_module_accessor(FighterId::CPU);
     // Now we make sure the module_accessor we use to generate the item/article is the correct character
-    let generator_module_accessor = if *(item.fighter_kind) == player_fighter_kind { player_module_accessor } else { cpu_module_accessor };
-    if *(item.fighter_kind) == player_fighter_kind {
+    let generator_module_accessor = if item.fighter_kind == player_fighter_kind { player_module_accessor } else { cpu_module_accessor };
+    if item.fighter_kind == player_fighter_kind {
         println!("generator is player!");
     } else {
         println!("generator is cpu!");
-        println!("item.fighter_kind = {}, player_fighter_kind = {}",*(item.fighter_kind),player_fighter_kind);
+        println!("item.fighter_kind = {}, player_fighter_kind = {}",item.fighter_kind,player_fighter_kind);
     }
     let variation = item.variation.as_ref().map(|v| **v).unwrap_or(0);
     item.item_kind.as_ref().map(|item_kind| {
